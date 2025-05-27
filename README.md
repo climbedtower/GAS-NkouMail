@@ -8,7 +8,7 @@ GASコード
 
 ## 設定
 
-`N-kou/EventDeadlineList.js` では OpenAI API キーと出力先スプレッドシート ID をスクリプトプロパティから読み込みます。
+`EventDeadlineList.js` では OpenAI API キーと出力先スプレッドシート ID をスクリプトプロパティから読み込みます。
 Google Apps Script のスクリプトプロパティに次の 3 つを設定してください。
 
 ```
@@ -18,7 +18,7 @@ LOOKBACK_DAYS     = <取得対象とする日数(省略時は1)>
 ```
 
 ## 使い方（初心者向け）
-1. Google Apps Script エディタに `N-kou/EventDeadlineList.js` を追加します。
+1. Google Apps Script エディタに `EventDeadlineList.js` を追加します。
 2. スクリプトプロパティに `OPENAI_API_KEY` と `SPREADSHEET_ID`、必要に応じて `LOOKBACK_DAYS` を登録します。
 3. `summarizeNHighEmails` 関数を実行すると結果がスプレッドシートに書き込まれます。
 4. トリガー画面で `cleanupExpiredEvents` を選び、時間主導型の毎日実行に設定すると、期限切れイベントが自動削除されます。
@@ -32,7 +32,7 @@ LOOKBACK_DAYS     = <取得対象とする日数(省略時は1)>
 
 ### API 呼び出し例
 
-`N-kou/DataAPI.js` の `doGet` は `category` パラメータを受け取り、
+`DataAPI.js` の `doGet` は `category` パラメータを受け取り、
 対応するカテゴリシートの内容を返します。
 
 ```
