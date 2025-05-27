@@ -26,17 +26,21 @@ function appendRows(name, rows) {
   return rows.length;
 }
 
-function parseDateParam(str) {
+function parseDateParam(str, endOfDay) {
   if (!str) return null;
   const d = new Date(str);
   if (isNaN(d)) return null;
-  d.setHours(0, 0, 0, 0);
+  if (endOfDay) {
+    d.setHours(23, 59, 59, 999);
+  } else {
+    d.setHours(0, 0, 0, 0);
+  }
   return d;
 }
 
 function searchEvents(params) {
   const start = parseDateParam(params.start);
-  const end = parseDateParam(params.end);
+  const endEndOfDay = parseDateParam(params.end, true);
   const keyword = params.keyword ? params.keyword.toLowerCase() : '';
   const category = params.category || '';
   let limit = parseInt(params.limit, 10);
@@ -47,11 +51,11 @@ function searchEvents(params) {
   const filtered = rows.filter(r => {
     let ok = true;
 
-    if (start || end) {
+    if (start || endEndOfDay) {
       const date = parseDateParam(r[2]);
       if (!date) return false;
       if (start && date < start) ok = false;
-      if (end && date > end) ok = false;
+      if (endEndOfDay && date > endEndOfDay) ok = false;
     }
 
     if (keyword) {
