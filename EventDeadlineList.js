@@ -9,6 +9,7 @@ const MODEL_CATEGORY = 'gpt-4o-mini';         // カテゴリ判定用
 const MAILS_PER_BATCH = 5;                    // まとめて投げる通数
 const SHEET_EVENTS   = 'イベント一覧';        // イベント一覧シート名
 const CATEGORIES     = ['課外授業', '重要/テスト', 'その他'];
+const SIMILARITY_THRESHOLD = 0.7;             // イベント統合に用いる類似度閾値
 
 // 件名や本文に基づくキーワード判定
 function guessCategory(text) {
@@ -83,8 +84,13 @@ function levenshtein(a, b) {
   }
   return d[m][n];
 }
+function normalizeText(str) {
+  return (str || '').toLowerCase().replace(/\s+/g, ' ').trim();
+}
 function similarity(a, b) {
   if (!a || !b) return 0;
+  a = normalizeText(a);
+  b = normalizeText(b);
   const dist = levenshtein(a, b);
   return 1 - dist / Math.max(a.length, b.length);
 }
@@ -98,7 +104,7 @@ function dedupeEvents(events) {
 
     let merged = false;
     for (const existing of seen[dateKey]) {
-      if (similarity(existing.title, ev.title) > 0.8) {
+      if (similarity(existing.title, ev.title) > SIMILARITY_THRESHOLD) {
         if (!existing.summary && ev.summary) {
           existing.summary = ev.summary;
           existing.row[1] = ev.summary;
