@@ -10,6 +10,17 @@ const MAILS_PER_BATCH = 5;                    // まとめて投げる通数
 const SHEET_EVENTS   = 'イベント一覧';        // イベント一覧シート名
 const CATEGORIES     = ['課外授業', '重要/テスト', 'その他'];
 
+// 件名や本文に基づくキーワード判定
+function guessCategory(text) {
+  if (!text) return 'その他';
+  const t = text.toLowerCase();
+  const important = /(締切|提出|試験|テスト|成績|重要|レポート)/i;
+  const extracurricular = /(課外|体験学習|ワークショップ|交流|イベント|ゲーム)/i;
+  if (important.test(t)) return '重要/テスト';
+  if (extracurricular.test(t)) return '課外授業';
+  return 'その他';
+}
+
 /****************** シート既存取得 & 書き込み ******************/
 function getExistingKeys(sheetName) {
   const ss = SpreadsheetApp.openById(SHEET_ID);
@@ -100,6 +111,15 @@ function dedupeEvents(events) {
           existing.category = ev.category;
           existing.row[4] = ev.category;
         }
+        if (!existing.subject && ev.subject) {
+          existing.subject = ev.subject;
+        }
+        if (!existing.body && ev.body) {
+          existing.body = ev.body;
+        }
+        if (!existing.preCategory && ev.preCategory) {
+          existing.preCategory = ev.preCategory;
+        }
         merged = true;
         break;
       }
@@ -112,6 +132,16 @@ function dedupeEvents(events) {
   });
 
   return result;
+}
+
+// キーワードからの暫定カテゴリ付与
+function applyKeywordCategory(events) {
+  events.forEach(ev => {
+    if (!ev.preCategory) {
+      const text = [ev.title, ev.subject, ev.body].filter(Boolean).join('\n');
+      ev.preCategory = guessCategory(text);
+    }
+  });
 }
 
 /******************** メイン ********************/
@@ -132,6 +162,7 @@ function summarizeNHighEmails() {
     Logger.log(`抽出イベント(前重複排除): ${events.length} 件`);
 
     events = dedupeEvents(events);
+    applyKeywordCategory(events);
     Logger.log(`抽出イベント(重複排除後): ${events.length} 件`);
 
   const needSummary = events.filter(e => e.title && !e.summary);
@@ -298,12 +329,17 @@ ${promptParts.join('\n\n')}
             if (detected) deadline = detected;
           }
 
+          const subject = mail.getSubject() || '';
+          const body = mail.getPlainBody();
           out.push({
             title: title,
             summary: '',              // 後で埋める
             deadline: deadline,
             category: '',            // 後で埋める
+            preCategory: guessCategory(subject + '\n' + body),
             mailDate: mail.getDate(),
+            subject: subject,
+            body: body.slice(0, 1000),
             row: [title, '', deadline, link, '']
           });
         });
@@ -397,8 +433,26 @@ function categorizeBatch(eventArr) {
       }
 
       const ev = eventArr[o.index - 1];
-      ev.category = o.category || 'その他';
+      const aiCat = CATEGORIES.includes(o.category) ? o.category : '';
+      let finalCat = aiCat;
+      if (!finalCat || finalCat === 'その他') {
+        if (ev.preCategory && ev.preCategory !== 'その他') {
+          finalCat = ev.preCategory;
+        }
+      }
+      ev.category = finalCat || 'その他';
       ev.row[4] = ev.category;
+    });
+
+    // AI から返らなかったイベントに対しても補完
+    eventArr.forEach(ev => {
+      if (!ev.category) {
+        ev.category = ev.preCategory || 'その他';
+        ev.row[4] = ev.category;
+      } else if (ev.category === 'その他' && ev.preCategory && ev.preCategory !== 'その他') {
+        ev.category = ev.preCategory;
+        ev.row[4] = ev.category;
+      }
     });
 
     Logger.log(`${arr.length} 件のカテゴリを処理`);
