@@ -8,6 +8,7 @@ const MODEL_SUMMARY  = 'gpt-4o-mini';         // 要約用
 const MODEL_CATEGORY = 'gpt-4o-mini';         // カテゴリ判定用
 const MAILS_PER_BATCH = 5;                    // まとめて投げる通数
 const SHEET_EVENTS   = 'イベント一覧';        // イベント一覧シート名
+const SHEET_FAILED   = '失敗イベント';        // OpenAI 処理失敗ログ
 const CATEGORIES     = ['課外授業', '重要/テスト', 'その他'];
 const SIMILARITY_THRESHOLD = 0.7;             // イベント統合に用いる類似度閾値
 
@@ -148,6 +149,22 @@ function applyKeywordCategory(events) {
       ev.preCategory = guessCategory(text);
     }
   });
+}
+
+// OpenAI 処理失敗時にイベント情報を記録
+function logFailedBatch(events, stage) {
+  try {
+    const ss = SpreadsheetApp.openById(SHEET_ID);
+    let sh = ss.getSheetByName(SHEET_FAILED);
+    if (!sh) sh = ss.insertSheet(SHEET_FAILED);
+
+    const now = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd HH:mm:ss');
+    const rows = events.map(ev => [now, stage, JSON.stringify(ev)]);
+    sh.getRange(sh.getLastRow() + 1, 1, rows.length, rows[0].length).setValues(rows);
+    Logger.log(`${rows.length} 件の失敗イベントを記録 (${stage})`);
+  } catch (err) {
+    Logger.log('失敗イベント記録エラー: ' + err.toString());
+  }
 }
 
 /******************** メイン ********************/
@@ -407,6 +424,7 @@ ${combined}`;
     
   } catch (error) {
     Logger.log('summarizeBatch でエラー: ' + error.toString());
+    logFailedBatch(eventArr, 'summary');
   }
 }
 
@@ -465,6 +483,7 @@ function categorizeBatch(eventArr) {
 
   } catch (error) {
     Logger.log('categorizeBatch でエラー: ' + error.toString());
+    logFailedBatch(eventArr, 'category');
   }
 }
 
@@ -642,4 +661,45 @@ function cleanupExpiredEvents() {
       }
     }
   });
+}
+
+// 失敗イベントを再処理する
+function retryFailedEvents() {
+  const ss = SpreadsheetApp.openById(SHEET_ID);
+  const sh = ss.getSheetByName(SHEET_FAILED);
+  if (!sh) {
+    Logger.log('失敗イベントシートがありません');
+    return;
+  }
+
+  const last = sh.getLastRow();
+  if (last < 1) return;
+
+  const rows = sh.getRange(1, 1, last, 3).getValues();
+  sh.clear();
+
+  const events = rows.map(r => {
+    try { return JSON.parse(r[2]); } catch (_) { return null; }
+  }).filter(Boolean);
+
+  if (events.length === 0) {
+    Logger.log('再処理対象イベントなし');
+    return;
+  }
+
+  const needSummary = events.filter(e => e.title && !e.summary);
+  for (let i = 0; i < needSummary.length; i += MAILS_PER_BATCH) {
+    summarizeBatch(needSummary.slice(i, i + MAILS_PER_BATCH));
+    if (i + MAILS_PER_BATCH < needSummary.length) Utilities.sleep(1000);
+  }
+
+  const needCategory = events.filter(e => !e.category);
+  for (let i = 0; i < needCategory.length; i += MAILS_PER_BATCH) {
+    categorizeBatch(needCategory.slice(i, i + MAILS_PER_BATCH));
+    if (i + MAILS_PER_BATCH < needCategory.length) Utilities.sleep(1000);
+  }
+
+  const existing = getExistingKeys(SHEET_EVENTS);
+  writeRowsUnique(SHEET_EVENTS, events.map(e => e.row), existing, true);
+  Logger.log('失敗イベントの再処理完了');
 }
