@@ -7,6 +7,15 @@ const TARGET_SHEET = 'イベント一覧';
 const DEFAULT_LIMIT = 10;  // デフォルト取得件数
 const MAX_LIMIT = 20;       // 上限取得件数
 
+// 取得した行の不要なデータを削除し、文字数を制限する
+function trimRows(rows, titleMaxLen, summaryMaxLen) {
+  return rows.map(r => [
+    (r[0] || '').toString().slice(0, titleMaxLen),
+    (r[1] || '').toString().slice(0, summaryMaxLen),
+    r[2], r[3], r[4]
+  ]);
+}
+
 function getSheetValues(name) {
   const ss = SpreadsheetApp.openById(SHEET_ID_API);
   const sh = ss.getSheetByName(name);
@@ -71,15 +80,7 @@ function searchEvents(params) {
     return ok;
   });
 
-  function trim(row) {
-    return [
-      (row[0] || '').toString().slice(0, 30),
-      (row[1] || '').toString().slice(0, 40),
-      row[2], row[3], row[4]
-    ];
-  }
-
-  const limited = filtered.slice(0, limit).map(trim);
+  const limited = trimRows(filtered.slice(0, limit), 30, 40);
   return { sheet: TARGET_SHEET, rows: limited };
 }
 
@@ -103,7 +104,8 @@ function doGet(e) {
   if (limit > MAX_LIMIT) limit = MAX_LIMIT;
 
   const data = getSheetValues(sheetName).slice(0, limit);
-  const output = { sheet: sheetName, rows: data };
+  const trimmed = trimRows(data, 30, 40);
+  const output = { sheet: sheetName, rows: trimmed };
   return ContentService
     .createTextOutput(JSON.stringify(output))
     .setMimeType(ContentService.MimeType.JSON);
