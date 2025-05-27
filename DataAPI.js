@@ -14,8 +14,6 @@ function getSheetValues(name) {
   const lastRow = sh.getLastRow();
   if (lastRow === 0) return [];
   return sh.getRange(1, 1, lastRow, 5).getValues();  // 必要な5列のみ取得
-  if (lastRow === 0) return [];
-  return sh.getRange(1, 1, lastRow, 5).getValues();  // 必要な5列のみ取得
 }
 
 function appendRows(name, rows) {
