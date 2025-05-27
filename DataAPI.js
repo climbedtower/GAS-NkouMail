@@ -16,6 +16,17 @@ function getSheetValues(name) {
   return sh.getRange(1, 1, lastRow, 5).getValues();  // 必要な5列のみ取得
 }
 
+// Limit title and summary length to keep the response lightweight
+function trimRows(rows, titleMaxLen, summaryMaxLen) {
+  const tMax = titleMaxLen || 40;
+  const sMax = summaryMaxLen || 40;
+  return rows.map(r => [
+    (r[0] || '').toString().slice(0, tMax),
+    (r[1] || '').toString().slice(0, sMax),
+    r[2], r[3], r[4]
+  ]);
+}
+
 function appendRows(name, rows) {
   const ss = SpreadsheetApp.openById(SHEET_ID_API);
   let sh = ss.getSheetByName(name);
@@ -71,7 +82,7 @@ function searchEvents(params) {
     return ok;
   });
 
-  const limited = filtered.slice(0, limit);
+  const limited = trimRows(filtered.slice(0, limit), 30, 40);
   return { sheet: TARGET_SHEET, rows: limited };
 }
 
@@ -95,7 +106,8 @@ function doGet(e) {
   if (limit > MAX_LIMIT) limit = MAX_LIMIT;
 
   const data = getSheetValues(sheetName).slice(0, limit);
-  const output = { sheet: sheetName, rows: data };
+  const trimmed = trimRows(data, 30, 40);
+  const output = { sheet: sheetName, rows: trimmed };
   return ContentService
     .createTextOutput(JSON.stringify(output))
     .setMimeType(ContentService.MimeType.JSON);
