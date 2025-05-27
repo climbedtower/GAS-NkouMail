@@ -71,7 +71,15 @@ function searchEvents(params) {
     return ok;
   });
 
-  const limited = filtered.slice(0, limit);
+  function trim(row) {
+    return [
+      (row[0] || '').toString().slice(0, 30),
+      (row[1] || '').toString().slice(0, 40),
+      row[2], row[3], row[4]
+    ];
+  }
+
+  const limited = filtered.slice(0, limit).map(trim);
   return { sheet: TARGET_SHEET, rows: limited };
 }
 
