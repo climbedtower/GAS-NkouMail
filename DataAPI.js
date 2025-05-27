@@ -91,7 +91,7 @@ function doGet(e) {
       const result = searchEvents(e.parameter);
       return ContentService
         .createTextOutput(JSON.stringify(result))
-        .setMimeType('application/json');
+        .setMimeType('ContentService.MimeType.JSON');
     }
     if (e.parameter.category) {
       sheetName = e.parameter.category;
@@ -108,7 +108,7 @@ function doGet(e) {
   const output = { sheet: sheetName, rows: trimmed };
   return ContentService
     .createTextOutput(JSON.stringify(output))
-    .setMimeType('application/json');
+    .setMimeType('ContentService.MimeType.JSON');
 }
 
 function doPost(e) {
@@ -116,7 +116,7 @@ function doPost(e) {
   if (!body) {
     return ContentService
       .createTextOutput(JSON.stringify({ error: 'no data' }))
-      .setMimeType('application/json');
+      .setMimeType('ContentService.MimeType.JSON');
   }
   let obj;
   try {
@@ -124,12 +124,12 @@ function doPost(e) {
   } catch (err) {
     return ContentService
       .createTextOutput(JSON.stringify({ error: 'invalid json' }))
-      .setMimeType('application/json');
+      .setMimeType('ContentService.MimeType.JSON');
   }
   const sheetName = obj.sheet || TARGET_SHEET;
   const rows = obj.rows || (obj.row ? [obj.row] : []);
   const count = appendRows(sheetName, rows);
   return ContentService
     .createTextOutput(JSON.stringify({ sheet: sheetName, inserted: count }))
-    .setMimeType('application/json');
+    .setMimeType('ContentService.MimeType.JSON');
 }
