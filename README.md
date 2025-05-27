@@ -98,5 +98,5 @@ paths:
 
 ```
 N高のイベントを調べたいので、重要に該当する予定を検索してください。
-API: https://script.google.com/macros/s/AKfy.../exec?mode=search&category=重要
+API: https://script.google.com/macros/s/AKfycbz0yTjy_3NxwdGgAjXMDb-NgJwsjSG5EK-mdXRTPQzbtNpZWdO0ZhYZYBnLlJdTU328/exec?mode=search&category=重要
 ```
