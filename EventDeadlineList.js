@@ -9,7 +9,7 @@ const MODEL_CATEGORY = 'gpt-4o-mini';         // カテゴリ判定用
 const MAILS_PER_BATCH = 5;                    // まとめて投げる通数
 const SHEET_EVENTS   = 'イベント一覧';        // イベント一覧シート名
 const SHEET_FAILED   = '失敗イベント';        // OpenAI 処理失敗ログ
-const CATEGORIES     = ['課外授業', '重要/テスト', 'その他'];
+const CATEGORIES     = ['課外活動', '大学進学', '語学・留学', '重要', 'その他'];
 const SIMILARITY_THRESHOLD = 0.7;             // イベント統合に用いる類似度閾値
 
 // 件名や本文に基づくキーワード判定
@@ -18,8 +18,12 @@ function guessCategory(text) {
   const t = text.toLowerCase();
   const important = /(締切|提出|試験|テスト|成績|重要|レポート)/i;
   const extracurricular = /(課外|体験学習|ワークショップ|交流|イベント|ゲーム)/i;
-  if (important.test(t)) return '重要/テスト';
-  if (extracurricular.test(t)) return '課外授業';
+  const college = /(大学|進学|入試|受験)/i;
+  const language = /(語学|英語|留学|toefl|ielts)/i;
+  if (important.test(t)) return '重要';
+  if (college.test(t)) return '大学進学';
+  if (language.test(t)) return '語学・留学';
+  if (extracurricular.test(t)) return '課外活動';
   return 'その他';
 }
 
@@ -440,7 +444,7 @@ function categorizeBatch(eventArr) {
       return `【${idx + 1}】${title}`;
     }).join('\n');
 
-    const prompt = `以下のイベントタイトルを次のいずれかのカテゴリに分類し JSON 配列で返してください: ${CATEGORIES.join(', ')}\n\n出力形式:\n[\n {"index":1,"category":"課外授業"}\n]\n\nイベント一覧:\n${combined}`;
+    const prompt = `以下のイベントタイトルを次のいずれかのカテゴリに分類し JSON 配列で返してください: ${CATEGORIES.join(', ')}\n\n出力形式:\n[\n {"index":1,"category":"課外活動"}\n]\n\nイベント一覧:\n${combined}`;
 
     Logger.log('OpenAI API 呼び出し開始（カテゴリ）');
     const resTxt = openaiCall(MODEL_CATEGORY, prompt);
@@ -656,7 +660,7 @@ function cleanupExpiredEvents() {
       if (!deadlineStr) continue;
       const d = new Date(deadlineStr);
       d.setHours(0, 0, 0, 0);
-      if (d < twoWeeksAgo && category !== CATEGORIES[1]) {
+      if (d < twoWeeksAgo && category !== CATEGORIES[3]) {
         sh.deleteRow(i);
       }
     }

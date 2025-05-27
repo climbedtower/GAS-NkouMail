@@ -31,7 +31,7 @@ LOOKBACK_DAYS     = <取得対象とする日数(省略時は1)>
 `summarizeNHighEmails` では取得したイベントを通常の `イベント一覧` シートに追記すると同時に、
 カテゴリ名だけのシートにも書き込みます。
 この動作は `writeRowsUnique` の第 4 引数に `true` を渡すことで有効になっています。
-利用できるカテゴリは **課外授業・重要/テスト・その他** の3種類です。
+利用できるカテゴリは **課外活動・大学進学・語学・留学・重要・その他** の5種類です。
 
 ## 失敗イベントの記録と再処理
 
@@ -45,7 +45,7 @@ JSON 形式で記録されます。`retryFailedEvents` 関数を実行すると�
 対応するカテゴリシートの内容を返します。
 
 ```
-https://script.google.com/macros/s/AKfy.../exec?category=課外授業
+https://script.google.com/macros/s/AKfy.../exec?category=課外活動
 ```
 
 パラメータを指定しなければ従来通り `イベント一覧` シートが返されます。
@@ -74,7 +74,7 @@ paths:
         - name: mode
           description: search を指定すると検索モード
         - name: category
-          description: カテゴリ (課外授業|重要/テスト|その他)
+          description: カテゴリ (課外活動|大学進学|語学・留学|重要|その他)
         - name: keyword
         - name: start
         - name: end
@@ -97,6 +97,6 @@ paths:
 ### プロンプト例
 
 ```
-N高のイベントを調べたいので、重要/テストに該当する予定を検索してください。
-API: https://script.google.com/macros/s/AKfy.../exec?mode=search&category=重要/テスト
+N高のイベントを調べたいので、重要に該当する予定を検索してください。
+API: https://script.google.com/macros/s/AKfy.../exec?mode=search&category=重要
 ```
