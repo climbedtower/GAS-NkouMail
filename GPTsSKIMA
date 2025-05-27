@@ -1,0 +1,96 @@
+openapi: "3.1.0"
+info:
+  title: N高イベント API
+  version: "1.0"
+servers:
+  - url: https://script.google.com/macros/s/AKfycbz0yTjy_3NxwdGgAjXMDb-NgJwsjSG5EK-mdXRTPQzbtNpZWdO0ZhYZYBnLlJdTU328/exec
+paths:
+  "/":
+    get:
+      operationId: getEvents         # ← 追加
+      summary: イベント一覧の取得
+      description: |
+        `category` でカテゴリ別シートを、`sheet` で任意シート名を指定可能。
+        `mode=search` を指定すると検索モードとなり、`keyword`/`start`/`end`/`category` が利用できます。
+      parameters:
+        - name: mode
+          in: query
+          schema:
+            type: string
+            enum:
+              - search
+        - name: keyword
+          in: query
+          schema:
+            type: string
+        - name: start
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: end
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: category
+          in: query
+          schema:
+            type: string
+        - name: sheet
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: 取得結果
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  sheet:
+                    type: string
+                  rows:
+                    type: array
+                    items:
+                      type: array
+                      items:
+                        type: string
+
+    post:
+      operationId: addEvents         # ← 追加
+      summary: 行データの追加
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                sheet:
+                  type: string
+                rows:
+                  type: array
+                  items:
+                    type: array
+                    items:
+                      type: string
+                row:
+                  type: array
+                  items:
+                    type: string
+              required:
+                - rows
+      responses:
+        "200":
+          description: 追加結果
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  sheet:
+                    type: string
+                  inserted:
+                    type: integer
